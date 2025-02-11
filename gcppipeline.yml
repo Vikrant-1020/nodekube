@@ -1,0 +1,49 @@
+steps:
+  # Step 1: Authenticate with Artifact Registry
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud auth configure-docker $_REGION-docker.pkg.dev
+
+  # Step 2: Get Current DateTime and Store in an Environment Variable
+  - name: 'alpine'
+    id: 'get-timestamp'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        echo "TIMESTAMP=$(date +'%d%m%y%H%M')" >> /workspace/timestamp.env
+
+  # Step 3: Load the timestamp value
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        source /workspace/timestamp.env
+        echo "Image will be tagged as latest and $TIMESTAMP"
+
+  # Step 4: Build the Docker image with both tags
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:latest'
+      - '-t'
+      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:$TIMESTAMP'
+      - '.'
+    env:
+      - 'TIMESTAMP=$(/bin/sh -c "date +%d%m%y%H%M")'
+
+  # Step 5: Push both tags to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:latest'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:$TIMESTAMP'

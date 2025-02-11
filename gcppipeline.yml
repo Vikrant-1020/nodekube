@@ -14,7 +14,7 @@ steps:
     args:
       - '-c'
       - |
-        echo "TIMESTAMP=$(date +'%d%m%y%H%M')" >> /workspace/timestamp.env
+        echo "_TIMESTAMP=$(date +'%d%m%y%H%M')" >> /workspace/timestamp.env
 
   # Step 3: Load the timestamp value
   - name: 'gcr.io/cloud-builders/docker'
@@ -23,7 +23,7 @@ steps:
       - '-c'
       - |
         source /workspace/timestamp.env
-        echo "Image will be tagged as latest and $TIMESTAMP"
+        echo "Image will be tagged as latest and $_TIMESTAMP"
 
   # Step 4: Build the Docker image with both tags
   - name: 'gcr.io/cloud-builders/docker'
@@ -32,7 +32,7 @@ steps:
       - '-t'
       - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:latest'
       - '-t'
-      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:$TIMESTAMP'
+      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:$_TIMESTAMP'
       - '.'
     env:
       - 'TIMESTAMP=$(/bin/sh -c "date +%d%m%y%H%M")'
@@ -46,7 +46,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:$TIMESTAMP'
+      - '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_IMAGE_NAME:$_TIMESTAMP'
 
 options:
   logging: CLOUD_LOGGING_ONLY
